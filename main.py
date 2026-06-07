@@ -36,7 +36,7 @@ os.makedirs("templates", exist_ok=True)
 @dp.message(F.text == "/start")
 async def send_welcome(message: types.Message):
     # Замени URL на ссылку своего приложения на Render после деплоя!
-    webapp_url = "https://your-render-app-name.onrender.com" 
+    webapp_url = "https://sonyaai.onrender.com/" 
     
     kb = [
         [types.KeyboardButton(text="Открыть Sonya AI", web_app=types.WebAppInfo(url=webapp_url))]
@@ -130,7 +130,7 @@ async def telegram_webhook(request: Request):
 @app.on_event("startup")
 async def on_startup():
     # Сюда тоже нужно будет вставить твой будущий URL от Render
-    RENDER_URL = os.getenv("RENDER_EXTERNAL_URL", "https://your-render-app-name.onrender.com")
+    RENDER_URL = os.getenv("RENDER_EXTERNAL_URL", "https://sonyaai.onrender.com/")
     await bot.set_webhook(f"{RENDER_URL}/webhook")
 
 @app.on_event("shutdown")
