@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.ogg
+*.mp3
+venv/
+.pytest_cache/
