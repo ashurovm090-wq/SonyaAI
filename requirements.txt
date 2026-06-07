@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+gunicorn
+aiogram
+google-generativeai
+groq
+edge-tts
