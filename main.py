@@ -18,7 +18,7 @@ GEMINI_TOKEN = os.getenv("GEMINI_TOKEN")
 genai.configure(api_key=GEMINI_TOKEN)
 ai_model = genai.GenerativeModel("gemini-1.5-flash")
 
-# Инициализация бота
+# Инициализация бота и FastAPI
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 app = FastAPI()
@@ -33,10 +33,10 @@ SONYA_PROMPT = (
 async def on_startup():
     logger.info("Соня успешно запустилась!")
 
-# Главная страница для Рендера (чтобы он видел порт и не падал)
+# Главная страница для Рендера, чтобы он видел порт и не падал
 @app.get("/")
 async def index():
-    return {"status": "Sonya AI is running successfully"}
+    return {"status": "Sonya AI работает отлично"}
 
 # Вебхук
 @app.post("/webhook")
