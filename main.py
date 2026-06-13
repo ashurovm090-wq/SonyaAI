@@ -20,7 +20,7 @@ dp = Dispatcher()
 app = FastAPI()
 
 SONYA_PROMPT = (
-    "You are Sonya, a sleek and futuristic AI voice assistant. "
+    "You are Elbrus, a sleek and futuristic AI voice assistant. "
     "Respond to the user's message in Russian, but keep your responses concise, "
     "natural, friendly and engaging. Use emojis appropriately."
 )
@@ -31,11 +31,11 @@ async def on_startup():
     await bot.delete_webhook(drop_pending_updates=True)
     # Ставим вебхук заново автоматически при старте кода!
     await bot.set_webhook(url="https://sonyaai.onrender.com/webhook")
-    logger.info("Соня успешно запустилась, вебхук обновлен!")
+    logger.info("Эльбрус успешно запустилась, вебхук обновлен!")
 
 @app.get("/")
 async def index():
-    return {"status": "Sonya AI работает отлично"}
+    return {"status": "Elbrus AI работает отлично"}
 
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
@@ -48,7 +48,7 @@ async def telegram_webhook(request: Request):
 @dp.message(Command("start"))
 async def send_welcome(message: types.Message):
     await message.answer(
-        "Привет! Я твоя голосовая помощница **Sonya** ✨\n\n"
+        "Привет! Я твой голосово помощник **Elbrus AI** ✨\n\n"
         "Просто напиши мне любой текст, и я отвечу тебе голосом!",
         parse_mode="Markdown"
     )
@@ -76,7 +76,7 @@ async def process_text_message(message: types.Message):
         with open(mp3_path, "rb") as audio_reply:
             await message.answer_voice(
                 voice=types.BufferedInputFile(audio_reply.read(), filename="sonya_voice.mp3"),
-                caption=f"🤖 **Sonya:** {sonya_response_text}",
+                caption=f"🤖 **Elbrus:** {sonya_response_text}",
                 parse_mode="Markdown"
             )
             
