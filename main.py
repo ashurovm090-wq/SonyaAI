@@ -10,7 +10,7 @@ from edge_tts import Communicate
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Токены из Render (Environment)
+# Токены берутся из настроек Render
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GEMINI_TOKEN = os.getenv("GEMINI_TOKEN")
 
@@ -23,6 +23,7 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 app = FastAPI()
 
+# Промпт для характера Сони
 SONYA_PROMPT = (
     "You are Sonya, a sleek and futuristic AI voice assistant. "
     "Respond to the user's message in Russian, but keep your responses concise, "
@@ -31,14 +32,14 @@ SONYA_PROMPT = (
 
 @app.on_event("startup")
 async def on_startup():
-    logger.info("Соня успешно запустилась!")
+    logger.info("Соня успешно запустилась и готова к работе!")
 
-# Главная страница для Рендера, чтобы он видел порт и не падал
+# Страница для проверки Рендером (чтобы порт не спал)
 @app.get("/")
 async def index():
-    return {"status": "Sonya AI работает отлично"}
+    return {"status": "Sonya AI работает отлично. Ждем сообщений."}
 
-# Вебхук
+# Вебхук для связи с Телеграмом
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
     update = await request.json()
@@ -46,6 +47,7 @@ async def telegram_webhook(request: Request):
     await dp.feed_update(bot, telegram_update)
     return {"ok": True}
 
+# Ответ на команду /start
 @dp.message(Command("start"))
 async def send_welcome(message: types.Message):
     await message.answer(
@@ -54,6 +56,7 @@ async def send_welcome(message: types.Message):
         parse_mode="Markdown"
     )
 
+# Обрабатываем ТОЛЬКО входящий ТЕКСТ
 @dp.message(F.text)
 async def process_text_message(message: types.Message):
     if message.text == "/start":
@@ -63,18 +66,19 @@ async def process_text_message(message: types.Message):
     mp3_path = f"reply_{message.message_id}.mp3"
     
     try:
-        # Запрос к Gemini
+        # 1. Отправляем текст в Gemini
         prompt = f"{SONYA_PROMPT}\nUser message: {message.text}"
         response = ai_model.generate_content(prompt)
         sonya_response_text = response.text
 
-        # Озвучка через edge-tts
+        # 2. Озвучиваем текст ответа в аудиофайл
         communicate = Communicate(sonya_response_text, "ru-RU-SvetlanaNeural")
         await communicate.save(mp3_path)
         
+        # Удаляем надпись ожидания
         await status_msg.delete()
         
-        # Отправка аудио
+        # 3. Отправляем готовое аудио обратно в чат
         with open(mp3_path, "rb") as audio_reply:
             await message.answer_voice(
                 voice=types.BufferedInputFile(audio_reply.read(), filename="sonya_voice.mp3"),
