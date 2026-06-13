@@ -6,24 +6,19 @@ from aiogram.filters import Command
 from google import generativeai as genai
 from edge_tts import Communicate
 
-# Настройка логов
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Токены берутся из настроек Render
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GEMINI_TOKEN = os.getenv("GEMINI_TOKEN")
 
-# Настройка Gemini
 genai.configure(api_key=GEMINI_TOKEN)
 ai_model = genai.GenerativeModel("gemini-1.5-flash")
 
-# Инициализация бота и FastAPI
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 app = FastAPI()
 
-# Промпт для характера Сони
 SONYA_PROMPT = (
     "You are Sonya, a sleek and futuristic AI voice assistant. "
     "Respond to the user's message in Russian, but keep your responses concise, "
@@ -32,14 +27,16 @@ SONYA_PROMPT = (
 
 @app.on_event("startup")
 async def on_startup():
-    logger.info("Соня успешно запустилась и готова к работе!")
+    # Удаляем вебхук и старые зависшие сообщения (drop_pending_updates), чтобы бот не тупил
+    await bot.delete_webhook(drop_pending_updates=True)
+    # Ставим вебхук заново автоматически при старте кода!
+    await bot.set_webhook(url="https://sonyaai.onrender.com/webhook")
+    logger.info("Соня успешно запустилась, вебхук обновлен!")
 
-# Страница для проверки Рендером (чтобы порт не спал)
 @app.get("/")
 async def index():
-    return {"status": "Sonya AI работает отлично. Ждем сообщений."}
+    return {"status": "Sonya AI работает отлично"}
 
-# Вебхук для связи с Телеграмом
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
     update = await request.json()
@@ -47,7 +44,7 @@ async def telegram_webhook(request: Request):
     await dp.feed_update(bot, telegram_update)
     return {"ok": True}
 
-# Ответ на команду /start
+# ТЕПЕРЬ /START РАБОТАЕТ НОРМАЛЬНО
 @dp.message(Command("start"))
 async def send_welcome(message: types.Message):
     await message.answer(
@@ -56,29 +53,26 @@ async def send_welcome(message: types.Message):
         parse_mode="Markdown"
     )
 
-# Обрабатываем ТОЛЬКО входящий ТЕКСТ
+# Обработка обычного текста
 @dp.message(F.text)
 async def process_text_message(message: types.Message):
-    if message.text == "/start":
+    # Если вдруг проскочила команда, не обрабатываем её как обычный текст
+    if message.text.startswith("/"):
         return
 
     status_msg = await message.answer("Sonya думает...")
     mp3_path = f"reply_{message.message_id}.mp3"
     
     try:
-        # 1. Отправляем текст в Gemini
         prompt = f"{SONYA_PROMPT}\nUser message: {message.text}"
         response = ai_model.generate_content(prompt)
         sonya_response_text = response.text
 
-        # 2. Озвучиваем текст ответа в аудиофайл
         communicate = Communicate(sonya_response_text, "ru-RU-SvetlanaNeural")
         await communicate.save(mp3_path)
         
-        # Удаляем надпись ожидания
         await status_msg.delete()
         
-        # 3. Отправляем готовое аудио обратно в чат
         with open(mp3_path, "rb") as audio_reply:
             await message.answer_voice(
                 voice=types.BufferedInputFile(audio_reply.read(), filename="sonya_voice.mp3"),
